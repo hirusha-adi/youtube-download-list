@@ -21,7 +21,8 @@ else:
 
 def ARG_ERROR():
     print("""
-Please enter correct values
+Usage:
+python3 ytdll.py v 144p README.md
     """)
 
 
@@ -31,17 +32,23 @@ An error occured while downloading
     """)
 
 
+# Download Type
 try:
     first_opt = str(sys.argv[1])
     if first_opt.lower().startswith('p'):
         print("+ Download type: Playlist")
+        download_type = "playlist"
     elif first_opt.lower().startswith('c'):
         print("+ Download type: Channel")
+        download_type = "channel"
     else:
         print("+ Download type: Video")
+        download_type = "video"
 except:
     ARG_ERROR()
+    sys.exit()
 
+# Video Quality + Video or Audio
 try:
     second_opt = str(sys.argv[2])
     if second_opt.lower() == '2160p':
@@ -97,16 +104,20 @@ try:
         dl_quality = '720p'
 except:
     ARG_ERROR()
+    sys.exit()
 
+# Download links list file
 try:
     third_option = str(sys.argv[3])
     if os.path.exists(third_option) == False:
         ARG_ERROR()
     else:
-        with open(f"{third_option}", "r", encoding="utf-8") as file:
-            all_file_lines = file.readlines()
+        with open(f"""{third_option}""", "r", encoding="utf-8") as file:
+            all_file_lines = list(line for line in (l.strip()
+                                  for l in file) if line)
 except:
     ARG_ERROR()
+    sys.exit()
 
 
 def DOWNLOAD_VIDEO(qualityvid: str, urlvid: str):
@@ -116,13 +127,66 @@ def DOWNLOAD_VIDEO(qualityvid: str, urlvid: str):
         yt = YouTube(urlvid)
     except Exception as e:
         print("Error", e)
-        return
+        YTDLLF_ERROR()
+        sys.exit()  # not sure i want to keep it here... idk
+
     video_name_corrected = f"""{yt.title.replace('|', 'x').replace('?', 'x').replace('>', 'x').replace('<', 'x').replace(':', 'x').replace(';', 'x').replace('"', 'x').replace("'", 'x')}"""
-    print(f"* Trying to downlod {video_name_corrected}")
+    print(f"* Trying to downlod {video_name_corrected} in {qualityvid}")
+
+    # Audio
+    if qualityvid in all_audio_qualities_tup:
+        try:
+            video = yt.streams.filter(only_audio=True).filter(
+                abr=f"{qualityvid}").first().download()
+            print(f"+ DONE: {video}")
+        except:
+            try:
+                print(
+                    f"* Trying to downlod {video_name_corrected} in highet available quality")
+                video = yt.streams.filter(only_audio=True).first().download()
+                print(f"+ DONE: {video}")
+            except:
+                print(
+                    f"* Trying to downlod {video_name_corrected} in lowest available quality")
+                video = yt.streams.filter(only_audio=True).last().download()
+                print(f"+ DONE: {video}")
+
+    # Video
+    else:
+        try:
+            video = yt.streams.filter(res=f"{qualityvid}").filter(
+                progressive=True).first().download()
+            print(f"+ DONE: {video}")
+        except:
+            try:
+                print(
+                    f"* Trying to downlod {video_name_corrected} in highet available quality")
+                video = yt.streams.filter(
+                    progressive=True).get_highest_resolution().download()
+                print(f"+ DONE: {video}")
+            except:
+                print(
+                    f"* Trying to downlod {video_name_corrected} in lowest available quality")
+                video = yt.streams.filter(
+                    progressive=True).get_lowest_resolution().download()
+                print(f"+ DONE: {video}")
 
 
 def ENTIRE_PROGRAM():
-    pass
+    global download_type
+    if download_type == "playlist":
+        for one_line in all_file_lines:
+            pl = Playlist(f'{one_line}')
+            for one_url in pl.video_urls:
+                DOWNLOAD_VIDEO(qualityvid=dl_quality, urlvid=one_url)
+    elif download_type == "channel":
+        for one_line in all_file_lines:
+            cl = Channel(f'{one_line}')
+            for one_url in cl.video_urls:
+                DOWNLOAD_VIDEO(qualityvid=dl_quality, urlvid=one_url)
+    else:
+        for one_line in all_file_lines:
+            DOWNLOAD_VIDEO(qualityvid=dl_quality, urlvid=one_line)
 
 
-print()
+ENTIRE_PROGRAM()
