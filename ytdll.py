@@ -21,14 +21,40 @@ else:
 
 def ARG_ERROR():
     print("""
+Example:
+    python3 ytdll.py v 144p README.md
+
 Usage:
-python3 ytdll.py v 144p README.md
+    python3 ytdll.py <download_type> <quality> <file>
+
+<download_type>:
+    v -> Video
+    p -> Playlist
+    c -> Channel
+
+<quality>:
+    Video:
+        2160p, 1440p, 1080p, 720p, 480p, 360p
+        240p, 144p 
+    Audio:
+        32kbps, 64kbps, 128kbps, 192kbps, 240kbps, 
+        256kbps, 320kbps
+
+<file>:
+    Make sure to include the file extension:
+        custom_file_name.txt
     """)
 
 
 def YTDLLF_ERROR():
     print("""
-An error occured while downloading
+An error has occured!
+
+Possible fixes:
+    1. Make sure you selected the correct <download_type>
+    2. Make sure there are no invalid links
+    3. Make sure to have only YouTube links in the text file
+    4. Make sure that you do not have private links
     """)
 
 
@@ -57,9 +83,6 @@ try:
     elif second_opt.lower() == '1440p':
         print("+ Download quality: 1440p")
         dl_quality = '1440p'
-    elif second_opt.lower() == '1080p':
-        print("+ Download quality: 1080p")
-        dl_quality = '1080p'
     elif second_opt.lower() == '1080p':
         print("+ Download quality: 1080p")
         dl_quality = '1080p'
