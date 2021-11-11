@@ -21,16 +21,26 @@ else:
 
 def ARG_ERROR():
     print("""
-Example:
-    python3 ytdll.py v 144p README.md
+List -
+    Example:
+        python3 ytdll.py v 144p link_list.txt
 
-Usage:
-    python3 ytdll.py <download_type> <quality> <file>
+    Usage:
+        python3 ytdll.py <download_type> <quality> <file>
+
+Search -
+    Example:
+        python3 ytdll.py s 720p Halsey Not Afraid Anymore
+    
+    Usage:
+        python3 ytdll.py <download_type> <quality> <video_name>
+        the <download_type> must be "s" to use the Search Feature
 
 <download_type>:
     v -> Video
     p -> Playlist
     c -> Channel
+    s -> Search
 
 <quality>:
     Video:
@@ -43,6 +53,9 @@ Usage:
 <file>:
     Make sure to include the file extension:
         custom_file_name.txt
+
+<video_name>:
+    The video name to search for and download
     """)
 
 
@@ -67,6 +80,9 @@ try:
     elif first_opt.lower().startswith('c'):
         print("+ Download type: Channel")
         download_type = "channel"
+    elif first_opt.lower().startswith('s'):
+        print("+ Type: Search")
+        download_type = "search"
     else:
         print("+ Download type: Video")
         download_type = "video"
@@ -129,18 +145,26 @@ except:
     ARG_ERROR()
     sys.exit()
 
-# Download links list file
-try:
-    third_option = str(sys.argv[3])
-    if os.path.exists(third_option) == False:
+if download_type != "search":
+    # Download links list file
+    try:
+        third_option = str(sys.argv[3])
+        if os.path.exists(third_option) == False:
+            ARG_ERROR()
+        else:
+            with open(f"""{third_option}""", "r", encoding="utf-8") as file:
+                all_file_lines = list(line for line in (l.strip()
+                                                        for l in file) if line)
+    except:
         ARG_ERROR()
-    else:
-        with open(f"""{third_option}""", "r", encoding="utf-8") as file:
-            all_file_lines = list(line for line in (l.strip()
-                                  for l in file) if line)
-except:
-    ARG_ERROR()
-    sys.exit()
+        sys.exit()
+else:  # download_type == "search"
+    try:
+        all_options_after_3 = sys.argv[3:]
+        what_to_search = ' '.join(all_options_after_3)
+    except:
+        ARG_ERROR()
+        sys.exit()
 
 
 def DOWNLOAD_VIDEO(qualityvid: str, urlvid: str):
@@ -202,11 +226,36 @@ def ENTIRE_PROGRAM():
             pl = Playlist(f'{one_line}')
             for one_url in pl.video_urls:
                 DOWNLOAD_VIDEO(qualityvid=dl_quality, urlvid=one_url)
+
     elif download_type == "channel":
         for one_line in all_file_lines:
             cl = Channel(f'{one_line}')
             for one_url in cl.video_urls:
                 DOWNLOAD_VIDEO(qualityvid=dl_quality, urlvid=one_url)
+
+    elif download_type == "search":
+        print(f"""+ Searching for {what_to_search}""")
+        searchedVideo = VideosSearch(f'{what_to_search}', limit=1)
+        mainresult = searchedVideo.result()["result"]
+        video_index = mainresult[0]
+        video_link = video_index["link"]
+        download_type = video_index["type"]
+        print(
+            f"""+ Selected {download_type} {video_index["title"]} by {video_index["channel"]["name"]} on {video_index["publishedTime"]}""")
+
+        if download_type == "video":
+            DOWNLOAD_VIDEO(qualityvid=dl_quality, urlvid=video_link)
+
+        elif download_type == "channel":
+            cl = Channel(f'{video_link}')
+            for one_url in cl.video_urls:
+                DOWNLOAD_VIDEO(qualityvid=dl_quality, urlvid=one_url)
+
+        else:
+            cl = Playlist(f'{video_link}')
+            for one_url in cl.video_urls:
+                DOWNLOAD_VIDEO(qualityvid=dl_quality, urlvid=one_url)
+
     else:
         for one_line in all_file_lines:
             DOWNLOAD_VIDEO(qualityvid=dl_quality, urlvid=one_line)
