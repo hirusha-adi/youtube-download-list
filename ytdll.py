@@ -173,7 +173,7 @@ def DOWNLOAD_VIDEO(qualityvid: str, urlvid: str):
     try:
         yt = YouTube(urlvid)
     except Exception as e:
-        print("Error", e)
+        print("Error:", e)
         YTDLLF_ERROR()
         sys.exit()  # not sure i want to keep it here... idk
 
